@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gap/gap.dart';
+import 'package:movie_discovery_app/components/grid_view_component.dart';
+import 'package:movie_discovery_app/components/list_view_component.dart';
+import 'package:movie_discovery_app/models/movide.dart';
+import 'package:movie_discovery_app/services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +16,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   
   bool layoutIsToggled = false;
+
+  late Future<List<Movie>> _popularMoviesFuture;
+  final String _imageBaseUrl = dotenv.env['TMDB_IMAGE_BASE_URL']!;
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Start fetching data when the screen is initialized
+    _popularMoviesFuture = ApiService().fetchPopularMovies();
+  }
 
   void toggleLayout(){
     setState(() {
@@ -75,25 +90,13 @@ class _HomeScreenState extends State<HomeScreen> {
           if(!layoutIsToggled)
           Expanded(
             flex: 6,
-            child: ListView.builder(
-              itemCount: 10,
-              itemBuilder: (BuildContext context, int index) {
-                return Card(child: ListTile(title: Text('This is a listview layout'),));
-              },
-            ),
+            child: ListViewComponent(popularMoviesFuture: _popularMoviesFuture, imageBaseUrl: _imageBaseUrl),
           )
           else
           Expanded(
             flex: 6,
-            child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-            ),
-            itemCount: 10,
-            itemBuilder: (BuildContext context, int index) {
-              return Card(child: GridTile(child: Text('This is a gridview layout')));
-            },
-          ),)
+            child: GridViewComponent(popularMoviesFuture: _popularMoviesFuture, imageBaseUrl: _imageBaseUrl),
+          )
           ,
         ],
       ),
