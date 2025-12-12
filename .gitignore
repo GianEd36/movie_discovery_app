@@ -3,7 +3,6 @@
 *.log
 *.pyc
 *.swp
-.env
 .DS_Store
 .atom/
 .build/
@@ -45,7 +44,14 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-#Firebase secrets
+# Firebase Secrets
 .firebaserc
 lib/firebase_options.dart
 android/app/google-services.json
+
+# Environment Variables
+.env
+
+# Build Files/Locks (Recommended)
+pubspec.lock
+firebase.json
