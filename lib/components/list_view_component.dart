@@ -1,73 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:movie_discovery_app/models/movide.dart';
+import 'package:movie_discovery_app/screens/movie_detail_screen.dart';
 
 class ListViewComponent extends StatelessWidget {
   const ListViewComponent({
     super.key,
-    required Future<List<Movie>> popularMoviesFuture,
-    required String imageBaseUrl,
-  }) : _popularMoviesFuture = popularMoviesFuture, _imageBaseUrl = imageBaseUrl;
+    required this.movies,
+    required this.imageBaseUrl,
+    required this.favoriteMovieIds,
+    required this.onToggleFavorite,
+  });
 
-  final Future<List<Movie>> _popularMoviesFuture;
-  final String _imageBaseUrl;
+  final List<Movie> movies;
+  final String imageBaseUrl;
+  final Set<int> favoriteMovieIds;
+  final Function(Movie) onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Movie>>(
-      // 3. Provide the Future to the builder
-      future: _popularMoviesFuture,
-      builder: (context, snapshot) {
-        // A. Handle Loading State
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } 
-        // B. Handle Error State
-        else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } 
-        // C. Handle Success State
-        else if (snapshot.hasData) {
-          final movies = snapshot.data!;
-          
-          // Use ListView.builder for efficient display of long lists
-          return ListView.builder(
-            itemCount: movies.length,
-            itemBuilder: (context, index) {
-              final movie = movies[index];
+    if (movies.isEmpty) {
+      return const Center(child: Text('No movies found.'));
+    }
+    
+    // Use ListView.builder for efficient display of long lists
+    return ListView.builder(
+      itemCount: movies.length,
+      itemBuilder: (context, index) {
+        final movie = movies[index];
+        final isFavorite = favoriteMovieIds.contains(movie.id);
+        
+        return ListTile(
+          // Leading image (movie poster)
+          leading: movie.posterPath.isNotEmpty
+              ? Image.network(
+                  '$imageBaseUrl${movie.posterPath}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.movie),
+                )
+              : const Icon(Icons.movie),
               
-              return ListTile(
-                // Leading image (movie poster)
-                leading: movie.posterPath.isNotEmpty
-                    ? Image.network(
-                        '$_imageBaseUrl${movie.posterPath}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.movie),
-                      )
-                    : const Icon(Icons.movie),
-                    
-                // Movie Title
-                title: Text(movie.title),
-                
-                // Movie Overview Snippet
-                subtitle: Text(
-                  movie.overview,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          // Movie Title
+          title: Text(movie.title),
+          
+          // Movie Overview Snippet
+          subtitle: Text(
+            movie.overview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          
+          trailing: IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.red : null,
+            ),
+            onPressed: () => onToggleFavorite(movie),
+          ),
+
+          // Action when the user taps the movie
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MovieDetailScreen(
+                  movie: movie,
+                  imageBaseUrl: imageBaseUrl,
+                  isFavorite: isFavorite,
+                  onToggleFavorite: onToggleFavorite,
                 ),
-                
-                // Action when the user taps the movie
-                onTap: () {
-                  // TODO: Navigate to the movie details screen
-                },
-              );
-            },
-          );
-        } 
-        // D. Handle No Data State
-        else {
-          return const Center(child: Text('No movies found.'));
-        }
+              ),
+            );
+          },
+        );
       },
     );
   }
 }
+

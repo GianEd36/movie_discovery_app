@@ -9,9 +9,22 @@ class ApiService {
   final String _baseUrl = dotenv.env['TMDB_BASE_URL']!;
 
   Future<List<Movie>> fetchPopularMovies() async {
-    
     final String popularMoviesUrl = '${_baseUrl}movie/popular?language=en-US&page=1&api_key=$_apiKey';
-    final response = await http.get(Uri.parse(popularMoviesUrl));
+    return _fetchMovies(popularMoviesUrl);
+  }
+
+  Future<List<Movie>> fetchTopRatedMovies() async {
+    final String topRatedMoviesUrl = '${_baseUrl}movie/top_rated?language=en-US&page=1&api_key=$_apiKey';
+    return _fetchMovies(topRatedMoviesUrl);
+  }
+
+  Future<List<Movie>> fetchUpcomingMovies() async {
+    final String upcomingMoviesUrl = '${_baseUrl}movie/upcoming?language=en-US&page=1&api_key=$_apiKey';
+    return _fetchMovies(upcomingMoviesUrl);
+  }
+
+  Future<List<Movie>> _fetchMovies(String url) async {
+    final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       // Decode the JSON string into a Dart map
@@ -24,7 +37,8 @@ class ApiService {
       return results.map((json) => Movie.fromJson(json)).toList();
     } else {
       // Throw an exception to handle errors in the UI
-      throw Exception('Failed to load popular movies: ${response.statusCode}');
+      throw Exception('Failed to load movies: ${response.statusCode}');
     }
   }
+
 }
