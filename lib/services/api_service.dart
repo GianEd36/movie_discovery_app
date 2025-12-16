@@ -47,4 +47,24 @@ class ApiService {
     }
   }
 
+  Future<String?> fetchMovieTrailer(int movieId) async {
+    final String url = '${_baseUrl}movie/$movieId/videos?language=en-US&api_key=$_apiKey';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> results = data['results'];
+      
+      // Look for a trailer on YouTube
+      final trailer = results.firstWhere(
+        (video) => video['site'] == 'YouTube' && video['type'] == 'Trailer',
+        orElse: () => null,
+      );
+
+      return trailer?['key'];
+    } else {
+      return null;
+    }
+  }
+
 }
