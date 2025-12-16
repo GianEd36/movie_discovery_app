@@ -23,6 +23,12 @@ class ApiService {
     return _fetchMovies(upcomingMoviesUrl);
   }
 
+  Future<List<Movie>> searchMovies(String query) async {
+    final encodedQuery = Uri.encodeComponent(query);
+    final String searchUrl = '${_baseUrl}search/movie?language=en-US&page=1&include_adult=false&api_key=$_apiKey&query=$encodedQuery';
+    return _fetchMovies(searchUrl);
+  }
+
   Future<List<Movie>> _fetchMovies(String url) async {
     final response = await http.get(Uri.parse(url));
 

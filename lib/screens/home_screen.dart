@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+  Timer? _debounce;
   
   final TextEditingController _searchController = TextEditingController();
   final String _imageBaseUrl = dotenv.env['TMDB_IMAGE_BASE_URL']!;
@@ -65,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -158,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   Future<void> _login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
@@ -195,7 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
-
 
   Future<void> _logout() async {
     await _auth.signOut();
@@ -311,17 +312,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _filterMovies() {
     final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
+    
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    if (query.isEmpty) {
+      setState(() {
         _filteredMovies = _movies;
-      } else {
+      });
+      return;
+    }
+
+    if (_selectedFilter == 'Favorites') {
+      setState(() {
         _filteredMovies = _movies.where((movie) {
           final titleMatch = movie.title.toLowerCase().contains(query);
           final genreMatch = movie.genres.any((genre) => genre.toLowerCase().contains(query));
           return titleMatch || genreMatch;
         }).toList();
-      }
-    });
+      });
+    } else {
+      _debounce = Timer(const Duration(milliseconds: 500), () async {
+        setState(() {
+          _isLoading = true;
+        });
+
+        try {
+          final apiService = ApiService();
+          final searchResults = await apiService.searchMovies(query);
+          
+          if (mounted) {
+            setState(() {
+              _filteredMovies = searchResults;
+              _isLoading = false;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _errorMessage = e.toString();
+            });
+          }
+        }
+      });
+    }
   }
 
   void toggleLayout(){
@@ -334,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        backgroundColor: Colors.lightBlue.shade400,
+        backgroundColor: Colors.green.shade200,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
